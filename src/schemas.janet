@@ -11,7 +11,7 @@
   (schema/validator
    (and (props :label :string
                :question :string
-               :type (enum :text :select :checkbox))
+               :type (enum :text :select :checkbox :password))
         (pred |(if (has-value? [:checkbox :select] ($ :type))
                  (and ($ :choices) (choices-schema ($ :choices)))
                  true))))) # TODO: Add :password :filepath :raw-select :autocomplete :any-key

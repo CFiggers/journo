@@ -53,12 +53,12 @@
   (cursor-go-to-pos [(inc (starting-pos 0)) 0])
   (for i 0 (length choices)
        (if (= current-choice i)
-         (prin "  »")
-         (prin "   "))
+         (prin "  » ")
+         (prin "    "))
        (when multi
          (if (has-value? current-selections i)
-           (prin " ● ")
-           (prin " ○ ")))
+           (prin "● ")
+           (prin "○ ")))
        (prin (choices i))
        (when (< i (dec (length choices))) (print ""))))
 
@@ -116,7 +116,7 @@
     (comment print "  [collect-choice] current-choice: " current-choice)
     results))
 
-(defn collect-text-input []
+(defn collect-text-input [&named redact]
   (terminal/enable-cursor)
   (var response @"")
   (forever
@@ -126,7 +126,7 @@
        3 (error {:message "Keyboard interrupt"})
        13 (do (print "") (break))
        127 (do (buffer/popn response 1) (prin "\b") (prin " ") (prin "\b"))
-       (do (cprin (string/from-bytes c) {:color :turquoise})
+       (do (cprin (if redact "*" (string/from-bytes c)) {:color :turquoise})
            (buffer/push response (string/from-bytes c))))))
   (comment print "  [collect-text-input] response: " response)
   (terminal/hide-cursor)
@@ -135,6 +135,7 @@
 (defn collect-answer [question]
   (case (question :type)
     :text     (collect-text-input)
+    :password (collect-text-input :redact true)
     :select   (collect-choices (question :choices))
     :checkbox (collect-choices (question :choices) :multi true)))
 

@@ -6,10 +6,13 @@
     :question "What is your favorite color?"
     :type :text}
    {:label "q2"
+    :question "Please set a password"
+    :type :password}
+   {:label "q3"
     :question "Pizza or icecream?"
     :type :select
     :choices ["Pizza" "Icecream"]}
-   {:label "q3"
+   {:label "q4"
     :question "Check all that apply"
     :type :checkbox
     :choices ["Overworked" "Underpaid" "Insides Out" "Outsides In"]}])
@@ -30,5 +33,7 @@
   (eprint ((answers :q2) :question))
   (eprint "  "((answers :q2) :answer))
   (eprint ((answers :q3) :question))
-  (eprint (string/format "  %q" ((answers :q3) :answer)))
+  (eprint "  "((answers :q3) :answer))
+  (eprint ((answers :q4) :question))
+  (eprint (string/format "  %q" ((answers :q4) :answer)))
   (eprint ""))
