@@ -4,6 +4,8 @@
 
 (use ./schemas)
 (use ./color)
+(use ./utils)
+
 (import ./termcodes :as terminal)
 
 (defn set-size

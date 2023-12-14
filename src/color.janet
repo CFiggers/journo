@@ -1,4 +1,5 @@
 (use judge)
+(use ./utils)
 
 (defn color-string [text color-key]
   (if-let [color-code

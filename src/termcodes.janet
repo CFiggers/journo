@@ -1,3 +1,5 @@
+(use ./utils)
+
 (defmacro enable-cursor []
   '(prin "\e[?25h"))
 
