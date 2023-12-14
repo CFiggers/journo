@@ -1,4 +1,5 @@
 .clj-kondo
 .lsp
 .vscode
-build
+build
+scratch.janet
