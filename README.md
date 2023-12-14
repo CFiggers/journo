@@ -5,7 +5,7 @@
 
 Journo is a [Janet](https://www.janet-lang.org) library for building interactive, interview-style CLI interfaces.
 
-![Alt text](media/journo-demo_2023-12-14.gif)
+![Alt text](media/journo-demo-a_2023-12-14.gif)
 
 ## Table of Contents
  - [Features](#features)
