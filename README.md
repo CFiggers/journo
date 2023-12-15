@@ -152,10 +152,10 @@ Comments, concerns, questions, issues, pull requests, code critiques, all are we
 The following libraries do this sort of thing way better and have been doing it for way longer:
 
 - JavaScript
-  - Inquirer.js 
+  - [Inquirer.js](https://github.com/SBoudrias/Inquirer.js) 
 - Python
-  - PyInquirer 
-  - Questionary
+  - [PyInquirer](https://github.com/CITGuru/PyInquirer) 
+  - [Questionary](https://github.com/tmbo/questionary)
 
 As far as I know, at time of writing there is nothing comparable to this library for Janet (happy to be corrected on that count though).
 
