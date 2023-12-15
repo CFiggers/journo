@@ -144,7 +144,7 @@
   (case (question :type)
     :text     (collect-text-input)
     "text"    (collect-text-input)
-    :password (collect-text-input :redact true
+    :password (collect-text-input :redact true)
     "password" (collect-text-input :redact true)
     :select   (collect-choices (question :choices))
     "select"   (collect-choices (question :choices))
