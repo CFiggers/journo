@@ -143,9 +143,13 @@
 (defn collect-answer [question]
   (case (question :type)
     :text     (collect-text-input)
-    :password (collect-text-input :redact true)
+    "text"    (collect-text-input)
+    :password (collect-text-input :redact true
+    "password" (collect-text-input :redact true)
     :select   (collect-choices (question :choices))
-    :checkbox (collect-choices (question :choices) :multi true)))
+    "select"   (collect-choices (question :choices))
+    :checkbox (collect-choices (question :choices) :multi true)
+    "checkbox" (collect-choices (question :choices) :multi true)))
 
 # TODO: Handle terminal resizing
 # TODO: Handle cancellation/keyboard interrupt
