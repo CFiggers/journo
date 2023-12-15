@@ -63,7 +63,7 @@ In your main file:
               {:question "What's your name?"
                :type text}))
 
-# This will ask all three questions store the responses in `answer`.
+# This will ask all three questions and store the responses in `answer`.
 (def answers (journo/interview
                [{:label :q1
                  :question "What's the password?"
@@ -94,7 +94,7 @@ Journo's API is very simple—it exposes two primary macros, each of which is a 
 
 Pass a single question to this function to have it asked at the command line. 
   
-The question must be a dictionary (table or struct) and contain `:label`, `:question`, and `type`. `type` can be one of:
+The question must be a dictionary (table or struct) and contain `:label`, `:question`, and `:type`. `:type` can be one of:
   
  - `:text` or "text" = Open input
  - `:password` or "password" = Open input, replaced with `*` in terminal
