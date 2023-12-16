@@ -5,7 +5,7 @@
   (test (choices-schema ["abc" "123"]) ["abc" "123"]))
 
 (deftest "choices-schema, should fail"
-  (test-error (choices-schema ["abc" 123]) "failed clause :string, expected value of type string, got 123"))
+  (test-error (choices-schema ["abc" 123]) "failed clause (or :string :buffer), choice failed"))
 
 (deftest "question-schema, should pass"
   (def sample-question
@@ -27,12 +27,12 @@
 (deftest "question-schema, should error"
   (def sample-question
     {:label "question" :question "What would you like?" :type 123})
-  (test-error (question-schema sample-question) "failed clause (enum :text :select :checkbox), expected one of (:text :select :checkbox), got 123"))
+  (test-error (question-schema sample-question) "failed clause (enum :text :select :checkbox :password \"text\" \"select\" \"checkbox\" \"password\"), expected one of (:text :select :checkbox :password \"text\" \"select\" \"checkbox\" \"password\"), got 123"))
 
 (deftest "question-schema, should error"
   (def sample-question
     {:label "question" :question "What would you like?"})
-  (test-error (question-schema sample-question) "failed clause (enum :text :select :checkbox), expected one of (:text :select :checkbox), got nil"))
+  (test-error (question-schema sample-question) "failed clause (enum :text :select :checkbox :password \"text\" \"select\" \"checkbox\" \"password\"), expected one of (:text :select :checkbox :password \"text\" \"select\" \"checkbox\" \"password\"), got nil"))
 
 (deftest "question-schema, with checkbox choices"
   (def sample-question
@@ -84,8 +84,7 @@
     {:label "q3" :question "Check all that apply" :type :checkbox :choices ["Overworked" "Underpaid"]})
   (test-error (question-list-schema [sample-question-1
                                      sample-question-2
-                                     sample-question-3])
-              "failed clause :string, expected value of type string, got 123"))
+                                     sample-question-3]) "failed clause (or :string :buffer), choice failed"))
 
 (deftest "question-or-list-schema, should pass"
   (def sample-question
