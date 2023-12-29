@@ -67,7 +67,7 @@
   ~(repeat ,n (do (terminal/clear-line)
                   (terminal/cursor-up))))
 
-(defn collect-choices [choices &named multi]
+(defn collect-choices [in-choices &named multi] 
   (var cursor-pos (get-cursor-pos))
   (var current-choice 0)
   (var current-selections @[]) 
@@ -88,6 +88,7 @@
           (+= offset 1)
           )
       (cprin tip {:color :grey})))
+  (def choices (if (dictionary? in-choices) (keys in-choices) in-choices))
   (render-options
    :starting-pos cursor-pos
    :choices choices
@@ -133,13 +134,14 @@
   (cursor-go-to-pos cursor-pos)
   (let [results (if multi
                   (map |(choices $) current-selections)
-                  (choices current-choice))
-        results-string (if multi (string/join results ", ")
-                           results)]
+                  [(choices current-choice)])
+        mask-results (if (dictionary? in-choices) (map in-choices results) results)
+        results-string (if multi (string/join mask-results ", ")
+                           (first mask-results))]
     (terminal/clear-line-forward)
     (cprint results-string {:color :turquoise})
     (comment print "  [collect-choice] current-choice: " current-choice)
-    results))
+    (if multi mask-results (first mask-results))))
 
 (defn collect-text-input [&named redact]
   (terminal/enable-cursor)

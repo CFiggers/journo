@@ -4,7 +4,8 @@
 
 (def choices-schema
   (schema/validator
-   (and (or :array :tuple)
+   (and (or :array :tuple :struct :table)
+        (keys (or :string :buffer))
         (values (or :string :buffer)))))
 
 (def question-schema
