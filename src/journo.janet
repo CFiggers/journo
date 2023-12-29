@@ -47,10 +47,11 @@
           :current-choice current-choice
           :current-selections current-selections
           :init init
-          :multi multi}]
+          :multi multi
+          :offset offset}]
   (when init
     (print ""))
-  (cursor-go-to-pos [(inc (starting-pos 0)) 0])
+  (cursor-go-to-pos [(+ (starting-pos 0) offset 1) 0])
   (for i 0 (length choices)
        (if (= current-choice i)
          (prin "  » ")
@@ -69,24 +70,39 @@
 (defn collect-choices [choices &named multi]
   (var cursor-pos (get-cursor-pos))
   (var current-choice 0)
-  (var current-selections @[])
-  (cprin (if multi "(Use arrow keys to move, <space> to select, <a> toggles all, <i> inverts current selection)"
-                   "(Use arrow keys to move, <enter> to confirm)")
-         {:color :grey})
+  (var current-selections @[]) 
+  (var tip (if multi "(Use arrow keys to move, <space> to select, <a> toggles all, <i> inverts current selection)" 
+                     "(Use arrow keys to move, <enter> to confirm)"))
+  (var offset 0)
+  (comment os/sleep 6)
+  (let [tip-len (rawterm/monowidth tip)
+        line-len (+ tip-len (cursor-pos 0))]
+    (if (> line-len (dyn :size/cols))
+      (do (cprint (string/slice tip 0 (- (dyn :size/cols) (cursor-pos 1))) {:color :grey})
+          (var cursor (- (dyn :size/cols) (cursor-pos 1)))
+          (while (>= (- tip-len cursor) (dyn :size/cols))
+            (cprint (string/slice tip cursor (+ cursor (dyn :size/cols))) {:color :grey})
+            (+= cursor (dyn :size/cols))
+            (+= offset 1))
+          (cprin (string/slice tip cursor) {:color :grey})
+          (+= offset 1)
+          )
+      (cprin tip {:color :grey})))
   (render-options
    :starting-pos cursor-pos
    :choices choices
    :current-choice current-choice
    :current-selections current-selections
    :multi multi
-   :init true)
-  (update cursor-pos 0 |(- $ (+ (max 0 (- (+ $ (length choices)) (dyn :size/rows))))))
+   :init true
+   :offset offset)
+  (update cursor-pos 0 |(- $ (+ (max 0 (- (+ $ (length choices) offset) (dyn :size/rows))))))
   (forever
    (handle-resize)
    (let [[c] (rawterm/getch)
          max-choice (dec (length choices))]
      (case c
-       3 (do (unwind-choices (length choices))
+       3 (do (unwind-choices (+ (length choices) offset))
              (cursor-go-to-pos cursor-pos)
              (error {:message "Keyboard interrupt"
                      :cursor [(first cursor-pos) 0]}))
@@ -94,12 +110,12 @@
             :arrow-up (set current-choice (max (dec current-choice) 0))
             :arrow-down (set current-choice (min (inc current-choice) max-choice)))
        32 (when multi
-           (if-let [n (index-of current-choice current-selections)]
-             (array/remove current-selections n)
-             (array/push current-selections current-choice)))
+            (if-let [n (index-of current-choice current-selections)]
+              (array/remove current-selections n)
+              (array/push current-selections current-choice)))
        13 (do (break))
        (chr "a") (if (= (length current-selections)
-                        (length choices)) 
+                        (length choices))
                    (set current-selections @[])
                    (set current-selections (range (length choices))))
        (chr "i") (set current-selections
@@ -111,8 +127,9 @@
     :choices choices
     :current-choice current-choice
     :current-selections current-selections
-    :multi multi))
-  (unwind-choices (length choices))
+    :multi multi
+    :offset offset))
+  (unwind-choices (+ (length choices) offset))
   (cursor-go-to-pos cursor-pos)
   (let [results (if multi
                   (map |(choices $) current-selections)

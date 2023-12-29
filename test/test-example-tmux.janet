@@ -5,13 +5,15 @@
   :setup    (fn [ ] ($ tmux -u new-session -d -x 120 -y 24 -s test-journo)
                     (while (not= ($<_ tmux capture-pane -p)
                                  "[caleb@UBUNTU-22.04 ~/projects/janet/journo]")
-                      (os/sleep 0.5)))
+                      (os/sleep 0.5))
+                    (os/sleep 1))
   :reset    (fn [_] ($ tmux send -t test-journo clear ENTER))
-  :teardown (fn [_] ($ tmux kill-session -t test-journo)))
+  :teardown (fn [_] ($ tmux kill-session -t test-journo) 
+                    (os/sleep 2)))
 
 (deftest: termux "Test basic output" [_]
   ($ tmux send -t test-journo janet SPACE example/example.janet ENTER)
-  (os/sleep 0.5)
+  (os/sleep 1)
 
   (test-stdout (print ($<_ tmux capture-pane -p)) `
     [caleb@UBUNTU-22.04 ~/projects/janet/journo] janet example/example.janet
