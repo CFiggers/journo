@@ -1,7 +1,7 @@
 (import spork/rawterm)
-(import spork/getline)
 (use judge)
 
+(import ./getline)
 (use ./schemas)
 (use ./color)
 (use ./utils)
@@ -67,7 +67,8 @@
   ~(repeat ,n (do (terminal/clear-line)
                   (terminal/cursor-up))))
 
-(defn collect-choices [in-choices &named multi] 
+(defn collect-choices [question &named multi] 
+  (var in-choices (question :choices))
   (var cursor-pos (get-cursor-pos))
   (var current-choice 0)
   (var current-selections @[]) 
@@ -143,32 +144,26 @@
     (comment print "  [collect-choice] current-choice: " current-choice)
     (if multi mask-results (first mask-results))))
 
-(defn collect-text-input [&named redact]
+(defn collect-text-input [question &named redact file]
   (terminal/enable-cursor)
-  (var response @"")
-  (forever
-   (handle-resize)
-   (let [[c] (rawterm/getch)]
-     (case c
-       3 (error {:message "Keyboard interrupt"})
-       13 (do (print "") (break))
-       127 (do (buffer/popn response 1) (prin "\b") (prin " ") (prin "\b"))
-       (do (cprin (if redact "*" (string/from-bytes c)) {:color :turquoise})
-           (buffer/push response (string/from-bytes c))))))
+  (var response @"") 
+  (def gl (getline/make-getline nil nil nil redact))
+  (set response (gl :prompt (string (cformat " ? " {:color :grey}) (cformat (string (question :question) " ") {:effects [:bold]})) 
+                    :raw-prompt (string " ? " (question :question) " ")))
   (comment print "  [collect-text-input] response: " response)
   (terminal/hide-cursor)
   response)
 
 (defn collect-answer [question]
   (case (question :type)
-    :text     (collect-text-input)
-    "text"    (collect-text-input)
-    :password (collect-text-input :redact true)
-    "password" (collect-text-input :redact true)
-    :select   (collect-choices (question :choices))
-    "select"   (collect-choices (question :choices))
-    :checkbox (collect-choices (question :choices) :multi true)
-    "checkbox" (collect-choices (question :choices) :multi true)))
+    :text      (collect-text-input question)
+    "text"     (collect-text-input question)
+    :password  (collect-text-input question :redact true)
+    "password" (collect-text-input question :redact true)
+    :select    (collect-choices question)
+    "select"   (collect-choices question)
+    :checkbox  (collect-choices question :multi true)
+    "checkbox" (collect-choices question :multi true)))
 
 # TODO: Handle terminal resizing
 # TODO: Handle cancellation/keyboard interrupt
@@ -205,8 +200,7 @@
       (each question qs
         (let [key (if keywordize (keyword (question :label)) (question :label))]
           (set question-home (get-cursor-pos))
-          (cprin " ? " {:color :grey})
-          (cprin (string (question :question) " ") {:effects [:bold]})
+          (prin (cformat " ? " {:color :grey}) (cformat (string (question :question) " ") {:effects [:bold]}))
           (try
             (put-in answers [key :answer] (collect-answer question))
             ([err fib]

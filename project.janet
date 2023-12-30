@@ -1,6 +1,6 @@
 (declare-project
   :name "journo"
-  :version "v0.0.1"
+  :version "v0.0.2"
   :description "A Janet library for for building interactive, interview-style CLI interfaces."
   :dependencies ["https://github.com/janet-lang/spork"
                  "https://github.com/ianthehenry/judge"])
@@ -12,4 +12,5 @@
            "src/schemas.janet"
            "src/termcodes.janet"
            "src/color.janet"
-           "src/utils.janet"])
+           "src/utils.janet"
+           "src/getline.janet"])
