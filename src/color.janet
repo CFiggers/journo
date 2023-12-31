@@ -56,13 +56,13 @@
   (test (cprint* "Hello there" :grey nil [:bold] true) "\e[1m\e[38;2;118;118;118mHello there\e[0;39m\e[0m\n"))
 
 (defmacro cprin [text {:color color :background background :effects effects}]
-  ~(prin (cprint* ,text ,color ,background ,effects)))
+  ~(prin (,cprint* ,text ,color ,background ,effects)))
 
 (defmacro cprint [text {:color color :background background :effects effects}]
-  ~(prin (cprint* ,text ,color ,background ,effects) "\n"))
+  ~(prin (,cprint* ,text ,color ,background ,effects) "\n"))
 
 (defmacro cformat [text {:color color :background background :effects effects}]
-  ~(cprint* ,text ,color ,background ,effects))
+  ~(,cprint* ,text ,color ,background ,effects))
 
 (test-macro (cprin "Hello there" {:color :grey})
   (prin (cprint* "Hello there" :grey nil nil false)))

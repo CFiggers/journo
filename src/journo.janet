@@ -1,4 +1,5 @@
 (import spork/rawterm)
+(import spork/path)
 (use judge)
 
 (import ./getline)
@@ -144,10 +145,84 @@
     (comment print "  [collect-choice] current-choice: " current-choice)
     (if multi mask-results (first mask-results))))
 
+(comment (def prefix "."))
+
+(defn filepath-autocomplete [prefix &]
+  (def rel-parts (path/parts prefix))
+  (def abs-parts (path/parts (path/abspath prefix)))
+  (def rel (if (= "." (first rel-parts)) "./" ""))
+  (def files (if (= "." prefix)
+               (filter |(not= "" $) (os/dir (path/abspath prefix)))
+               (->> (os/dir (apply path/join (drop -1 abs-parts)))
+                    (filter |(string/has-prefix? (last abs-parts) $)))))
+  (def ret (seq [file :in files]
+             (string rel
+              (path/join
+               ;(drop -1 rel-parts)
+               (if (= :directory (os/stat file :mode))
+                 (string file path/sep) file)))))
+  (if (and (= 1 (length ret)) (deep= (first ret) prefix) (= :directory (os/stat (first ret) :mode)))
+    (filepath-autocomplete (string prefix path/sep)) ret))
+
+(test (filepath-autocomplete ".")
+  @["./example/"
+    "./src/"
+    "./.gitignore"
+    "./LICENSE"
+    "./project.janet"
+    "./README.md"
+    "./.lsp/"
+    "./.clj-kondo/"
+    "./.git/"
+    "./scratch.janet"
+    "./media/"
+    "./test/"])
+(test (filepath-autocomplete "./")
+  @["./example/"
+    "./src/"
+    "./.gitignore"
+    "./LICENSE"
+    "./project.janet"
+    "./README.md"
+    "./.lsp/"
+    "./.clj-kondo/"
+    "./.git/"
+    "./scratch.janet"
+    "./media/"
+    "./test/"])
+(test (filepath-autocomplete "e") @["example/"])
+(test (filepath-autocomplete "src") @["src/"])
+(test (filepath-autocomplete "src/")
+  @["src/init.janet"
+    "src/getline.janet"
+    "src/journo.janet"
+    "src/color.janet"
+    "src/utils.janet"
+    "src/termcodes.janet"
+    "src/schemas.janet"])
+(test (filepath-autocomplete "./src/")
+  @["./src/init.janet"
+    "./src/getline.janet"
+    "./src/journo.janet"
+    "./src/color.janet"
+    "./src/utils.janet"
+    "./src/termcodes.janet"
+    "./src/schemas.janet"])
+(test (filepath-autocomplete "./test/j") @["./test/junk"])
+(test (filepath-autocomplete "./test/junk")
+  @["./test/junk/__pycache__"
+    "./test/junk/test-journo.hy"
+    "./test/junk/test.hy"
+    "./test/junk/capture.hy"
+    "./test/junk/output"
+    "./test/junk/capture.py"
+    "./test/junk/janet"
+    "./test/junk/goodcapture.py"])
+
 (defn collect-text-input [question &named redact file]
   (terminal/enable-cursor)
   (var response @"") 
-  (def gl (getline/make-getline nil nil nil redact))
+  (def gl (getline/make-getline nil (if file filepath-autocomplete nil) nil redact))
   (set response (gl :prompt (string (cformat " ? " {:color :grey}) (cformat (string (question :question) " ") {:effects [:bold]})) 
                     :raw-prompt (string " ? " (question :question) " ")))
   (comment print "  [collect-text-input] response: " response)
@@ -155,15 +230,13 @@
   response)
 
 (defn collect-answer [question]
-  (case (question :type)
+  (case (keyword (question :type))
     :text      (collect-text-input question)
-    "text"     (collect-text-input question)
     :password  (collect-text-input question :redact true)
-    "password" (collect-text-input question :redact true)
+    :path      (collect-text-input question :file true)
     :select    (collect-choices question)
-    "select"   (collect-choices question)
     :checkbox  (collect-choices question :multi true)
-    "checkbox" (collect-choices question :multi true)))
+    (error "bad question type (this error should be unreachable)")))
 
 # TODO: Handle terminal resizing
 # TODO: Handle cancellation/keyboard interrupt
@@ -208,7 +281,7 @@
                       (= (err :message) "Keyboard interrupt"))
                (do
                  (cursor-go-to-pos (or (err :cursor) question-home))
-                 (prin)
+                 (when (err :offset) (terminal/cursor-up (err :offset)))
                  (cprin (string " ? " (question :question) " ") {:color :grey})
                  (terminal/cursor-down)
                  (print "\n\nCancelled by user")

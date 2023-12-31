@@ -8,6 +8,7 @@
 # - unit testing?
 
 (import spork/rawterm)
+(import ./color :as c)
 
 (def max-history "Maximal amount of items in the history" 500)
 
@@ -58,6 +59,12 @@
   (sort ret)
   ret)
 
+(comment
+  (def autocomplete-options filepath-autocomplete)
+  (def buf @".")
+  (var pos 1)
+  )
+
 (defn make-getline
   "Reads a line of input into a buffer, like `getline`. However, allow looking up entries with a general
   lookup function rather than a environment table."
@@ -77,9 +84,12 @@
   (def tmp-buf "Buffer to group writes to stderr for terminal rendering." @"")
   (var pos "Cursor byte position in buf. Must be on valid utf-8 start byte at all times." 0)
   (var lines-below "Number of dirty lines below input line for drawing cleanup." 0)
+  (var offset "Lines scrolled by prints to account for if interview is cancelled" 0)
   (var ret-value "Value to return to caller, usually the mutated buffer." buf)
   (var more-input "Loop condition variable" true)
-  (def input-buf @"")
+  (var active-autosuggestions nil)
+  (var autosuggestion-selected nil)
+  (var input-buf @"") 
 
   (defn getc
     "Get next character. Caller needs to check input buf after call if utf8 sequence returned (>= c 0x80)"
@@ -111,7 +121,7 @@
     (repeat lines-below
       (buffer/push tmp-buf "\e[1B\e[999D\e[K"))
     (when (pos? lines-below)
-      (buffer/format tmp-buf "\e[%dA\e[999D" lines-below)
+      (buffer/format tmp-buf "\e[%dA\e[999D" lines-below) 
       (set lines-below 0))
     (flushs))
 
@@ -139,18 +149,6 @@
     (comment eprin (string/format "\e[1A%d\e[%dD\e[1B" prpt-width (length (string visual-pos))))
     (buffer/format tmp-buf "\r%s%s\e[38;2;97;214;214m%s\e[0;39m\e[0K\r\e[%dC" prpt pad view visual-pos)
     (flushs))
-
-#   (defn- history-move
-#     [idx delta]
-#     (def new-idx (min (dec (length history)) (max 0 (+ idx delta))))
-#     (when (not= idx new-idx)
-#       (when (= idx (dec (length history)))
-#         (put history idx (string buf)))
-#       (buffer/clear buf)
-#       (buffer/push buf (in history new-idx))
-#       (set pos (length buf))
-#       (refresh))
-#     new-idx)
 
   (defn- check-overflow
     []
@@ -183,12 +181,18 @@
   (defn- autocomplete
     []
     (unless autocomplete-options (break))
-    (def ctx (autocomplete-context buf pos))
-    (unless ctx (break))
+    (var ctx (or (autocomplete-context buf pos) [0 ""]))
     (def [ctx-pos ctx-string] ctx)
     (set pos (+ ctx-pos (length ctx-string)))
     (def options (autocomplete-options ctx-string buf pos))
     (clear-lines)
+    # TODO: Selecting an suggestion with tab/arrow keys and confirming with enter
+    # (when (deep= options active-autosuggestions)
+    #   (if autosuggestion-selected
+    #     (+= autosuggestion-selected 1)
+    #     (set autosuggestion-selected 0)))
+    # (when autosuggestion-selected
+    #   (update options autosuggestion-selected |(c/cformat $ {:color :black :background :white})))
     (case (length options)
       0 (refresh)
       1
@@ -199,33 +203,28 @@
       (do # print all options
         (def gcp (reduce greatest-common-prefix (first options) options))
         (insert (string/slice gcp (length ctx-string)))
+
         (def maxlen (extreme > (map length options)))
         (def colwidth (+ 4 maxlen))
         (def cols (max 1 (math/floor (/ w colwidth))))
         (def rows (partition cols options))
         (def padding (string/repeat " " colwidth))
         (set lines-below (length rows))
+        (var i 0)
         (each row rows
-          (eprint)
-          (each item row
-            (eprin (slice (string item padding) 0 colwidth))))
+          (eprint) # TODO: Determine whether the terminal will scroll here and if so increment offset
+          (each item row 
+            (+= i 1)
+            # (when (= i autosuggestion-selected) (eprin "\e[0;30m\e[0;47m"))
+            (eprin (slice (string item padding) 0 colwidth))
+            # (when (= i autosuggestion-selected (eprin "\e[0;39m\e[0;49m")))
+            ))
         (eprinf "\e[%dA" lines-below)
         (eflush)
-        (refresh))))
 
-#   (defn- showdoc
-#     []
-#     (unless doc-fetch (break))
-#     (def ctx (autocomplete-context buf pos))
-#     (unless ctx (break))
-#     (def [_ ctx-string] ctx)
-#     (def doc-source (doc-fetch ctx-string w h))
-#     (unless doc-source (break))
-#     (clear-lines)
-#     (set lines-below (length (string/find-all "\n" doc-source)))
-#     (eprin doc-source)
-#     (eprinf "\e[%dA" lines-below)
-#     (refresh))
+        # (set active-autosuggestions options)
+
+        (refresh))))
 
   (defn- kleft
     [&opt draw]
@@ -329,7 +328,8 @@
           (kleft)
           3 # ctrl-c
           # (do (clear-lines) (eprint "^C") (eflush) (rawterm/end) (os/exit 1))
-          (error {:message "Keyboard interrupt"})
+          (do (clear-lines)
+              (error {:message "Keyboard interrupt"}))
           4 # ctrl-d, eof
           (if (= pos (length buf) 0)
             (do (set more-input false) (clear-lines))
@@ -341,7 +341,7 @@
           7 # ctrl-g
           nil # (showdoc)
           8 # ctrl-h
-          (kback)
+          (kbackw)
           9 # tab
           (autocomplete)
           12 # ctrl-l
@@ -387,9 +387,4 @@
             127 (kbackw)
             nil))))
     (eprint)
-    # (if (= buf ret-value)
-    #   (if (= "" (string/trimr buf))
-    #     (array/pop history)
-    #     (put history (dec (length history)) (string/trimr buf "\n")))
-    #   (array/pop history))
     ret-value))

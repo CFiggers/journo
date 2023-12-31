@@ -28,11 +28,11 @@
   (schema/validator
    (and (props :label (or :string :keyword)
                :question (or :string :buffer)
-               :type (enum :text :select :checkbox :password
-                           "text" "select" "checkbox" "password"))
+               :type (enum :text :select :checkbox :password :path
+                           "text" "select" "checkbox" "password" "path"))
         (pred |(if (has-value? [:checkbox :select "checkbox" "select"] ($ :type))
                  (and ($ :choices) (choices-schema ($ :choices)))
-                 true))))) # TODO: Add :password :filepath :raw-select :autocomplete :any-key
+                 true))))) # TODO: Add :path :raw-select :autocomplete :any-key :option-abbrevs
 
 (def question-list-schema
   (schema/validator
