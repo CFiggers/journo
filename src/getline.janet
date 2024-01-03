@@ -10,8 +10,6 @@
 (import spork/rawterm)
 (import ./color :as c)
 
-(def max-history "Maximal amount of items in the history" 500)
-
 (def- sym-prefix-peg
   (peg/compile
     ~{:symchar (+ (range "\x80\xff" "AZ" "az" "09") (set "!$%&*+-./:<?=>@^_"))
