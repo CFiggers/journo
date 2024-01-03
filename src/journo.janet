@@ -103,20 +103,33 @@
   (forever
    (handle-resize)
    (let [[c] (rawterm/getch)
-         max-choice (dec (length choices))]
+         max-choice (dec (length choices))
+         cursor-up |(do (set current-choice (dec current-choice))
+                          (when (= current-choice -1) (set current-choice (dec (length choices)))))
+         cursor-down |(do (set current-choice (inc current-choice))
+                            (when (> current-choice (dec (length choices))) (set current-choice 0)))]
      (case c
+       2 (set current-choice 0)
        3 (do (unwind-choices (+ (length choices) offset))
              (cursor-go-to-pos cursor-pos)
              (error {:message "Keyboard interrupt"
                      :cursor [(first cursor-pos) 0]}))
+       4 (cursor-down)
+       6 (set current-choice (dec (length choices)))
+       13 (do (break))
+       14 (cursor-down)
+       21 (cursor-up)
        27 (case (gather-multi-byte-input)
-            :arrow-up (set current-choice (max (dec current-choice) 0))
-            :arrow-down (set current-choice (min (inc current-choice) max-choice)))
+            :arrow-up (cursor-up)           
+            :arrow-down (cursor-down))
        32 (when multi
             (if-let [n (index-of current-choice current-selections)]
               (array/remove current-selections n)
-              (array/push current-selections current-choice)))
-       13 (do (break))
+              (array/push current-selections current-choice))) 
+       106 (cursor-down)
+       107 (cursor-up)
+       1011 (set current-choice 0)
+       1012 (cursor-up)
        (chr "a") (if (= (length current-selections)
                         (length choices))
                    (set current-selections @[])
