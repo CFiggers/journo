@@ -35,8 +35,8 @@
   (var ret @"")
   (terminal/query-cursor-position)
   (forever
-   (rawterm/getch ret)
-   (when (= (last ret) (chr "R")) (break)))
+    (rawterm/getch ret)
+    (when (= (last ret) (chr "R")) (break)))
   (peg/match '(* "\e[" (number :d+) ";" (number :d+) "R") ret))
 
 (defn cursor-go-to-pos [[row col]]
@@ -54,25 +54,25 @@
     (print ""))
   (cursor-go-to-pos [(+ (starting-pos 0) offset 1) 0])
   (for i 0 (length choices)
-       (if (= current-choice i)
-         (prin "  » ")
-         (prin "    "))
-       (when multi
-         (if (has-value? current-selections i)
-           (prin "● ")
-           (prin "○ ")))
-       (prin (choices i))
-       (when (< i (dec (length choices))) (print ""))))
+    (if (= current-choice i)
+      (prin "  » ")
+      (prin "    "))
+    (when multi
+      (if (has-value? current-selections i)
+        (prin "● ")
+        (prin "○ ")))
+    (prin (choices i))
+    (when (< i (dec (length choices))) (print ""))))
 
 (defmacro unwind-choices [n]
   ~(repeat ,n (do (terminal/clear-line)
                   (terminal/cursor-up))))
 
-(defn collect-choices [question &named multi] 
+(defn collect-choices [question &named multi]
   (var in-choices (question :choices))
   (var cursor-pos (get-cursor-pos))
   (var current-choice 0)
-  (var current-selections @[]) 
+  (var current-selections @[])
   (var tip (if multi "(Use arrow keys to move, <space> to select, <a> toggles all, <i> inverts current selection)" 
                      "(Use arrow keys to move, <enter> to confirm)"))
   (var offset 0)
@@ -87,64 +87,63 @@
             (+= cursor (dyn :size/cols))
             (+= offset 1))
           (cprin (string/slice tip cursor) {:color :grey})
-          (+= offset 1)
-          )
+          (+= offset 1))
       (cprin tip {:color :grey})))
   (def choices (if (dictionary? in-choices) (keys in-choices) in-choices))
   (render-options
-   :starting-pos cursor-pos
-   :choices choices
-   :current-choice current-choice
-   :current-selections current-selections
-   :multi multi
-   :init true
-   :offset offset)
-  (update cursor-pos 0 |(- $ (+ (max 0 (- (+ $ (length choices) offset) (dyn :size/rows))))))
-  (forever
-   (handle-resize)
-   (let [[c] (rawterm/getch)
-         max-choice (dec (length choices))
-         cursor-up |(do (set current-choice (dec current-choice))
-                          (when (= current-choice -1) (set current-choice (dec (length choices)))))
-         cursor-down |(do (set current-choice (inc current-choice))
-                            (when (> current-choice (dec (length choices))) (set current-choice 0)))]
-     (case c
-       2 (set current-choice 0)
-       3 (do (unwind-choices (+ (length choices) offset))
-             (cursor-go-to-pos cursor-pos)
-             (error {:message "Keyboard interrupt"
-                     :cursor [(first cursor-pos) 0]}))
-       4 (cursor-down)
-       6 (set current-choice (dec (length choices)))
-       13 (do (break))
-       14 (cursor-down)
-       21 (cursor-up)
-       27 (case (gather-multi-byte-input)
-            :arrow-up (cursor-up)           
-            :arrow-down (cursor-down))
-       32 (when multi
-            (if-let [n (index-of current-choice current-selections)]
-              (array/remove current-selections n)
-              (array/push current-selections current-choice))) 
-       106 (cursor-down)
-       107 (cursor-up)
-       1011 (set current-choice 0)
-       1012 (cursor-up)
-       (chr "a") (if (= (length current-selections)
-                        (length choices))
-                   (set current-selections @[])
-                   (set current-selections (range (length choices))))
-       (chr "i") (set current-selections
-                      (filter |(not= "" $)
-                              (seq [i :range [0 (length choices)]]
-                                (if (has-value? current-selections i) "" i))))))
-   (render-options
     :starting-pos cursor-pos
     :choices choices
     :current-choice current-choice
     :current-selections current-selections
     :multi multi
-    :offset offset))
+    :init true
+    :offset offset)
+  (update cursor-pos 0 |(- $ (+ (max 0 (- (+ $ (length choices) offset) (dyn :size/rows))))))
+  (forever
+    (handle-resize)
+    (let [[c] (rawterm/getch)
+          max-choice (dec (length choices))
+          cursor-up |(do (set current-choice (dec current-choice))
+                         (when (= current-choice -1) (set current-choice (dec (length choices)))))
+          cursor-down |(do (set current-choice (inc current-choice))
+                           (when (> current-choice (dec (length choices))) (set current-choice 0)))]
+      (case c
+        2 (set current-choice 0)
+        3 (do (unwind-choices (+ (length choices) offset))
+              (cursor-go-to-pos cursor-pos)
+              (error {:message "Keyboard interrupt"
+                      :cursor [(first cursor-pos) 0]}))
+        4 (cursor-down)
+        6 (set current-choice (dec (length choices)))
+        13 (do (break))
+        14 (cursor-down)
+        21 (cursor-up)
+        27 (case (gather-multi-byte-input)
+             :arrow-up (cursor-up)
+             :arrow-down (cursor-down))
+        32 (when multi
+             (if-let [n (index-of current-choice current-selections)]
+               (array/remove current-selections n)
+               (array/push current-selections current-choice)))
+        106 (cursor-down)
+        107 (cursor-up)
+        1011 (set current-choice 0)
+        1012 (cursor-up)
+        (chr "a") (if (= (length current-selections)
+                         (length choices))
+                    (set current-selections @[])
+                    (set current-selections (range (length choices))))
+        (chr "i") (set current-selections
+                       (filter |(not= "" $)
+                               (seq [i :range [0 (length choices)]]
+                                 (if (has-value? current-selections i) "" i))))))
+    (render-options
+      :starting-pos cursor-pos
+      :choices choices
+      :current-choice current-choice
+      :current-selections current-selections
+      :multi multi
+      :offset offset))
   (unwind-choices (+ (length choices) offset))
   (cursor-go-to-pos cursor-pos)
   (let [results (if multi
@@ -152,7 +151,7 @@
                   [(choices current-choice)])
         mask-results (if (dictionary? in-choices) (map in-choices results) results)
         results-string (if multi (string/join mask-results ", ")
-                           (first mask-results))]
+                                 (first mask-results))]
     (terminal/clear-line-forward)
     (cprint results-string {:color :turquoise})
     (comment print "  [collect-choice] current-choice: " current-choice)
@@ -169,74 +168,74 @@
                (->> (os/dir (apply path/join (drop -1 abs-parts)))
                     (filter |(string/has-prefix? (last abs-parts) $)))))
   (def ret (seq [file :in files]
-             (string rel
-              (path/join
-               ;(drop -1 rel-parts)
-               (if (= :directory (os/stat file :mode))
-                 (string file path/sep) file)))))
+             (string rel 
+                     (path/join
+                       ;(drop -1 rel-parts)
+                       (if (= :directory (os/stat file :mode))
+                         (string file path/sep) file)))))
   (if (and (= 1 (length ret)) (deep= (first ret) prefix) (= :directory (os/stat (first ret) :mode)))
     (filepath-autocomplete (string prefix path/sep)) ret))
 
 (test (filepath-autocomplete ".")
-  @["./example/"
-    "./src/"
-    "./.gitignore"
-    "./LICENSE"
-    "./project.janet"
-    "./README.md"
-    "./.lsp/"
-    "./.clj-kondo/"
-    "./.git/"
-    "./scratch.janet"
-    "./media/"
-    "./test/"])
+      @["./example/"
+        "./src/"
+        "./.gitignore"
+        "./LICENSE"
+        "./project.janet"
+        "./README.md"
+        "./.lsp/"
+        "./.clj-kondo/"
+        "./.git/"
+        "./scratch.janet"
+        "./media/"
+        "./test/"])
 (test (filepath-autocomplete "./")
-  @["./example/"
-    "./src/"
-    "./.gitignore"
-    "./LICENSE"
-    "./project.janet"
-    "./README.md"
-    "./.lsp/"
-    "./.clj-kondo/"
-    "./.git/"
-    "./scratch.janet"
-    "./media/"
-    "./test/"])
+      @["./example/"
+        "./src/"
+        "./.gitignore"
+        "./LICENSE"
+        "./project.janet"
+        "./README.md"
+        "./.lsp/"
+        "./.clj-kondo/"
+        "./.git/"
+        "./scratch.janet"
+        "./media/"
+        "./test/"])
 (test (filepath-autocomplete "e") @["example/"])
 (test (filepath-autocomplete "src") @["src/"])
 (test (filepath-autocomplete "src/")
-  @["src/init.janet"
-    "src/getline.janet"
-    "src/journo.janet"
-    "src/color.janet"
-    "src/utils.janet"
-    "src/termcodes.janet"
-    "src/schemas.janet"])
+      @["src/init.janet"
+        "src/getline.janet"
+        "src/journo.janet"
+        "src/color.janet"
+        "src/utils.janet"
+        "src/termcodes.janet"
+        "src/schemas.janet"])
 (test (filepath-autocomplete "./src/")
-  @["./src/init.janet"
-    "./src/getline.janet"
-    "./src/journo.janet"
-    "./src/color.janet"
-    "./src/utils.janet"
-    "./src/termcodes.janet"
-    "./src/schemas.janet"])
+      @["./src/init.janet"
+        "./src/getline.janet"
+        "./src/journo.janet"
+        "./src/color.janet"
+        "./src/utils.janet"
+        "./src/termcodes.janet"
+        "./src/schemas.janet"])
 (test (filepath-autocomplete "./test/j") @["./test/junk"])
 (test (filepath-autocomplete "./test/junk")
-  @["./test/junk/__pycache__"
-    "./test/junk/test-journo.hy"
-    "./test/junk/test.hy"
-    "./test/junk/capture.hy"
-    "./test/junk/output"
-    "./test/junk/capture.py"
-    "./test/junk/janet"
-    "./test/junk/goodcapture.py"])
+      @["./test/junk/__pycache__"
+        "./test/junk/test-journo.hy"
+        "./test/junk/test.hy"
+        "./test/junk/capture.hy"
+        "./test/junk/output"
+        "./test/junk/capture.py"
+        "./test/junk/janet"
+        "./test/junk/goodcapture.py"])
 
 (defn collect-text-input [question &named redact file]
   (terminal/enable-cursor)
-  (var response @"") 
+  (var response @"")
   (def gl (getline/make-getline nil (if file filepath-autocomplete nil) nil redact))
-  (set response (gl :prompt (string (cformat " ? " {:color :grey}) (cformat (string (question :question) " ") {:effects [:bold]})) 
+  (set response (gl :prompt (string (cformat " ? " {:color :grey}) (cformat (string (question :question) " ") {:effects [:bold]}))
                     :raw-prompt (string " ? " (question :question) " ")))
   (comment print "  [collect-text-input] response: " response)
   (terminal/hide-cursor)
@@ -244,11 +243,11 @@
 
 (defn collect-answer [question]
   (case (keyword (question :type))
-    :text      (collect-text-input question)
-    :password  (collect-text-input question :redact true)
-    :path      (collect-text-input question :file true)
-    :select    (collect-choices question)
-    :checkbox  (collect-choices question :multi true)
+    :text (collect-text-input question)
+    :password (collect-text-input question :redact true)
+    :path (collect-text-input question :file true)
+    :select (collect-choices question)
+    :checkbox (collect-choices question :multi true)
     (error "bad question type (this error should be unreachable)")))
 
 # TODO: Handle terminal resizing
@@ -274,9 +273,9 @@
   [qs &named keywordize]
   (question-list-schema qs)
   (var answers
-       (tabseq [q :in qs]
-         (if keywordize (keyword (q :label)) (q :label))
-         (put (from-pairs (pairs q)) :label nil)))
+    (tabseq [q :in qs]
+      (if keywordize (keyword (q :label)) (q :label))
+      (put (from-pairs (pairs q)) :label nil)))
   (try
     (defer (cleanup-rawterm)
       (rawterm/begin set-size)
@@ -290,21 +289,21 @@
           (try
             (put-in answers [key :answer] (collect-answer question))
             ([err fib]
-             (if (and (dictionary? err) 
-                      (= (err :message) "Keyboard interrupt"))
-               (do
-                 (cursor-go-to-pos (or (err :cursor) question-home))
-                 (when (err :offset) (terminal/cursor-up (err :offset)))
-                 (cprin (string " ? " (question :question) " ") {:color :grey})
-                 (terminal/cursor-down)
-                 (print "\n\nCancelled by user")
-                 (error :exit))
-               (propagate err fib)))))))
+              (if (and (dictionary? err)
+                       (= (err :message) "Keyboard interrupt"))
+                (do
+                  (cursor-go-to-pos (or (err :cursor) question-home))
+                  (when (err :offset) (terminal/cursor-up (err :offset)))
+                  (cprin (string " ? " (question :question) " ") {:color :grey})
+                  (terminal/cursor-down)
+                  (print "\n\nCancelled by user")
+                  (error :exit))
+                (propagate err fib)))))))
     ([err fib]
-     (if (= err :exit)
-       (os/exit 1)
-       (propagate err fib))))
-  (comment pp answers) 
+      (if (= err :exit)
+        (os/exit 1)
+        (propagate err fib))))
+  (comment pp answers)
   answers)
 
 # TODO: Response validation
