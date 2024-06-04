@@ -51,9 +51,8 @@
       (effects-string effects)))
 
 (deftest "cprint*"
-  (test (cprint* "Hello there" :grey nil nil nil) "\e[m\e[38;2;118;118;118mHello there\e[0;39m\e[0m")
-  (test (cprint* "Hello there" :grey nil nil true) "\e[m\e[38;2;118;118;118mHello there\e[0;39m\e[0m\n")
-  (test (cprint* "Hello there" :grey nil [:bold] true) "\e[1m\e[38;2;118;118;118mHello there\e[0;39m\e[0m\n"))
+  (test (cprint* "Hello there" :grey nil nil) "\e[m\e[38;2;118;118;118mHello there\e[0;39m\e[0m")
+  (test (cprint* "Hello there" :grey nil [:bold]) "\e[1m\e[38;2;118;118;118mHello there\e[0;39m\e[0m"))
 
 (defmacro cprin [text {:color color :background background :effects effects}]
   ~(prin (,cprint* ,text ,color ,background ,effects)))
@@ -65,4 +64,4 @@
   ~(,cprint* ,text ,color ,background ,effects))
 
 (test-macro (cprin "Hello there" {:color :grey})
-  (prin (cprint* "Hello there" :grey nil nil false)))
+  (prin (@cprint* "Hello there" :grey nil nil)))
