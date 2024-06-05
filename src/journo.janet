@@ -48,9 +48,9 @@
   ``
   [err-text]
   (def current-loc (get-cursor-pos))
-  (cursor-go-to-position [(dyn :size/rows) 2])
+  (cursor-go-to-pos [(dyn :size/rows) 2])
   (cprin err-text {:color :red})
-  (cursor-go-to-position current-loc))
+  (cursor-go-to-pos current-loc))
 
 (defn clear-error
   ``
@@ -58,9 +58,9 @@
   ``
   []
   (def current-loc (get-cursor-pos))
-  (cursor-go-to-position [(dyn :size/rows) 2])
+  (cursor-go-to-pos [(dyn :size/rows) 2])
   (terminal/clear-line)
-  (cursor-go-to-position current-loc))
+  (cursor-go-to-pos current-loc))
 
 (defn render-options
   [&keys {:starting-pos starting-pos
@@ -261,7 +261,7 @@
     (comment print "  [collect-text-input] response: " response)
     (terminal/hide-cursor)
     (if file 
-      (if (os/stat response)
+      (if (os/stat (string response))
         (do (clear-error) (break))
         (show-error "File not found. Please try again"))))
   response)
