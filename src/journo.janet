@@ -260,10 +260,11 @@
                       :raw-prompt (string " ? " (question :question) " ")))
     (comment print "  [collect-text-input] response: " response)
     (terminal/hide-cursor)
-    (if file 
+    (if file
       (if (os/stat (string response))
         (do (clear-error) (break))
-        (show-error "File not found. Please try again"))))
+        (show-error "File not found. Please try again"))
+      (break)))
   response)
 
 (defn collect-answer [question]
