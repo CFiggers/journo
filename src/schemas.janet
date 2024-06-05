@@ -19,10 +19,10 @@
 
 (test (choices-schema ["abc" "123"]) ["abc" "123"])
 (test (choices-schema {"abc" "123"}) {"abc" "123"})
-(test-error (choices-schema [:abc "123"]) "failed clause (pred (short-fn (or (dict-schema $) (indexed-schema $)))), predicate <tuple 0x562110FDC650> failed for value <tuple 0x562111163AA0>")
-(test-error (choices-schema {:abc "123"}) "failed clause (pred (short-fn (or (dict-schema $) (indexed-schema $)))), predicate <tuple 0x562110FDC650> failed for value <struct 0x5621110F24F8>")
-(test-error (choices-schema ["abc" 123]) "failed clause (pred (short-fn (or (dict-schema $) (indexed-schema $)))), predicate <tuple 0x562110FDC650> failed for value <tuple 0x562110EFA5D0>")
-(test-error (choices-schema {"abc" 123}) "failed clause (pred (short-fn (or (dict-schema $) (indexed-schema $)))), predicate <tuple 0x562110FDC650> failed for value <struct 0x562110F2EAD8>")
+(test-error (try (choices-schema [:abc "123"]) ([_] (error "Errored"))) "Errored")
+(test-error (try (choices-schema {:abc "123"})  ([_]  (error  "Errored"))) "Errored")
+(test-error (try (choices-schema ["abc" 123])  ([_]  (error  "Errored"))) "Errored")
+(test-error (try (choices-schema {"abc" 123})  ([_]  (error  "Errored"))) "Errored")
 
 (def question-schema
   (schema/validator
