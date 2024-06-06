@@ -178,8 +178,6 @@
                        (if (has-value? in-choices result)
                          (set ret result)
                          (each in-choice in-choices
-                           (pp result)
-                           (pp in-choice)
                            (when (and (dictionary? in-choice)
                                       (= (first (keys in-choice)) result))
                              (set ret (first (values in-choice))))))
