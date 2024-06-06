@@ -109,7 +109,11 @@
           (cprin (string/slice tip cursor) {:color :grey})
           (+= offset 1))
       (cprin tip {:color :grey})))
-  (def choices (if (dictionary? in-choices) (keys in-choices) in-choices))
+  (def choices
+    (seq [choice :in in-choices]
+      (cond
+        (bytes? choice) choice
+        (dictionary? choice) (first (keys choice)))))
   (render-options
     :starting-pos cursor-pos
     :choices choices
@@ -169,7 +173,17 @@
   (let [results (if multi
                   (map |(choices $) current-selections)
                   [(choices current-choice)])
-        mask-results (if (dictionary? in-choices) (map in-choices results) results)
+        mask-results (seq [result :in results]
+                       (var ret "")
+                       (if (has-value? in-choices result)
+                         (set ret result)
+                         (each in-choice in-choices
+                           (pp result)
+                           (pp in-choice)
+                           (when (and (dictionary? in-choice)
+                                      (= (first (keys in-choice)) result))
+                             (set ret (first (values in-choice))))))
+                       ret)
         results-string (if multi (string/join mask-results ", ")
                          (first mask-results))]
     (terminal/clear-line-forward)

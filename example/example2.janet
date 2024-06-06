@@ -1,4 +1,4 @@
-(use judge) 
+(use judge)
 (import /src/init :as journo)
 
 (def test-interview
@@ -11,11 +11,11 @@
    {:label "q3"
     :question "Pizza or icecream?"
     :type :select
-    :choices {"Pizza" "p" "Icecream" "i"}}
+    :choices [{"Pizza" "p"} {"Icecream" "i"}]}
    {:label "q4"
     :question "Check all that apply"
     :type :checkbox
-    :choices {"Overworked" "o" "Underpaid" "u" "Insides Out" "i" "Outsides In" "n"}}])
+    :choices [{"Overworked" "o"} {"Underpaid" "u"} {"Insides Out" "i"} {"Outsides In" "n"}]}])
 
 (defn main [& args]
   (eprint "[TEST] Please answer the following questions.")
@@ -31,9 +31,9 @@
   (eprint ((answers :q1) :question))
   (eprint "  " ((answers :q1) :answer))
   (eprint ((answers :q2) :question))
-  (eprint "  "((answers :q2) :answer))
+  (eprint "  " ((answers :q2) :answer))
   (eprint ((answers :q3) :question))
-  (eprint "  "((answers :q3) :answer))
+  (eprint "  " ((answers :q3) :answer))
   (eprint ((answers :q4) :question))
   (eprint (string/format "  %q" ((answers :q4) :answer)))
   (eprint ""))
