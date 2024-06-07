@@ -86,6 +86,20 @@
      ? Please set a password ****
      ? Pizza or icecream? Pizza
      ? Check all that apply Overworked
+     ? Pick a file
+  `)
+  
+  ($ tmux send -t test-journo .git ENTER)
+  (os/sleep 0.5)
+
+  (test-stdout (print ($<_ tmux capture-pane -p)) `
+    ------------------------
+    
+     ? What is your favorite color? blue
+     ? Please set a password ****
+     ? Pizza or icecream? Pizza
+     ? Check all that apply Overworked
+     ? Pick a file .git
     
     ------------------------
     
@@ -99,6 +113,8 @@
       Pizza
     Check all that apply
       @["Overworked"]
+    Pick a file
+      .git
     
     [caleb@UBUNTU-22.04 ~/projects/janet/journo]
   `))

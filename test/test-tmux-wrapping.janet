@@ -89,30 +89,20 @@
      ? Please set a password ****
      ? Pizza or icecream? Pizza
      ? Check all that apply Overworked
-    
-    ------------------------
-    
-    Got these answers:
-    
-    What is your favorite color?
-      blue
-    Please set a password
-      blue
-    Pizza or icecream?
-      Pizza
-    Check all that apply
-      @["Overworked"]
-    
-    [caleb@UBUNTU-22.04 ~/projects/janet/journo]
+     ? Pick a file
   `)
-  ($ tmux send -t test-journo2 janet SPACE example/example.janet ENTER)
+
+  ($ tmux send -t test-journo2 .git ENTER)
   (os/sleep 0.5)
 
   (test-stdout (print ($<_ tmux capture-pane -p)) `
+    ------------------------
+    
      ? What is your favorite color? blue
      ? Please set a password ****
      ? Pizza or icecream? Pizza
      ? Check all that apply Overworked
+     ? Pick a file .git
     
     ------------------------
     
@@ -126,6 +116,33 @@
       Pizza
     Check all that apply
       @["Overworked"]
+    Pick a file
+      .git
+    
+    [caleb@UBUNTU-22.04 ~/projects/janet/journo]
+  `)
+
+  ($ tmux send -t test-journo2 janet SPACE example/example.janet ENTER)
+  (os/sleep 0.5)
+
+  (test-stdout (print ($<_ tmux capture-pane -p)) `
+     ? Check all that apply Overworked
+     ? Pick a file .git
+    
+    ------------------------
+    
+    Got these answers:
+    
+    What is your favorite color?
+      blue
+    Please set a password
+      blue
+    Pizza or icecream?
+      Pizza
+    Check all that apply
+      @["Overworked"]
+    Pick a file
+      .git
     
     [caleb@UBUNTU-22.04 ~/projects/janet/journo] janet example/example.janet
     [TEST] Please answer the following questions.
@@ -139,9 +156,7 @@
   (os/sleep 0.5)
 
   (test-stdout (print ($<_ tmux capture-pane -p)) `
-     ? Please set a password ****
-     ? Pizza or icecream? Pizza
-     ? Check all that apply Overworked
+     ? Pick a file .git
     
     ------------------------
     
@@ -155,6 +170,8 @@
       Pizza
     Check all that apply
       @["Overworked"]
+    Pick a file
+      .git
     
     [caleb@UBUNTU-22.04 ~/projects/janet/journo] janet example/example.janet
     [TEST] Please answer the following questions.
@@ -170,8 +187,6 @@
 
   (test-stdout (print ($<_ tmux capture-pane -p)) `
     
-    ------------------------
-    
     Got these answers:
     
     What is your favorite color?
@@ -182,6 +197,8 @@
       Pizza
     Check all that apply
       @["Overworked"]
+    Pick a file
+      .git
     
     [caleb@UBUNTU-22.04 ~/projects/janet/journo] janet example/example.janet
     [TEST] Please answer the following questions.
@@ -199,8 +216,6 @@
   (os/sleep 0.5)
 
   (test-stdout (print ($<_ tmux capture-pane -p)) `
-    
-    What is your favorite color?
       blue
     Please set a password
       blue
@@ -208,6 +223,8 @@
       Pizza
     Check all that apply
       @["Overworked"]
+    Pick a file
+      .git
     
     [caleb@UBUNTU-22.04 ~/projects/janet/journo] janet example/example.janet
     [TEST] Please answer the following questions.
@@ -230,6 +247,16 @@
   (os/sleep 0.5)
 
   (test-stdout (print ($<_ tmux capture-pane -p)) `
+      blue
+    Please set a password
+      blue
+    Pizza or icecream?
+      Pizza
+    Check all that apply
+      @["Overworked"]
+    Pick a file
+      .git
+    
     [caleb@UBUNTU-22.04 ~/projects/janet/journo] janet example/example.janet
     [TEST] Please answer the following questions.
     
@@ -239,6 +266,20 @@
      ? Please set a password ****
      ? Pizza or icecream? Pizza
      ? Check all that apply Overworked
+     ? Pick a file
+  `)
+
+  ($ tmux send -t test-journo2 .git ENTER)
+  (os/sleep 0.5)
+
+  (test-stdout (print ($<_ tmux capture-pane -p)) `
+    ------------------------
+    
+     ? What is your favorite color? blue
+     ? Please set a password ****
+     ? Pizza or icecream? Pizza
+     ? Check all that apply Overworked
+     ? Pick a file .git
     
     ------------------------
     
@@ -252,6 +293,8 @@
       Pizza
     Check all that apply
       @["Overworked"]
+    Pick a file
+      .git
     
     [caleb@UBUNTU-22.04 ~/projects/janet/journo]
   `))
