@@ -1,4 +1,4 @@
-(use judge) 
+(use judge)
 (import /src/init :as journo)
 
 (def test-interview
@@ -11,11 +11,11 @@
    {:label "q3"
     :question "Pizza or icecream?"
     :type :select
-    :choices {"Pizza" "p" "Icecream" "i"}}
+    :choices [{"Pizza" "p"} {"Icecream" "i"}]}
    {:label "q4"
     :question "Check all that apply"
     :type :checkbox
-    :choices {"Overworked" "o" "Underpaid" "u" "Insides Out" "i" "Outsides In" "n"}}
+    :choices [{"Overworked" "o"} {"Underpaid" "u"} {"Insides Out" "i"} {"Outsides In" "n"}]}
    {:label "q5"
     :question "Pick a file"
     :type :path}])

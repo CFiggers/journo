@@ -42,6 +42,26 @@
 (defn cursor-go-to-pos [[row col]]
   (prin (string/format "\e[%d;%dH" row col)))
 
+(defn show-error
+  ``
+  Display an error at the bottom of the terminal.
+  ``
+  [err-text]
+  (def current-loc (get-cursor-pos))
+  (cursor-go-to-pos [(dyn :size/rows) 2])
+  (cprin err-text {:color :red})
+  (cursor-go-to-pos current-loc))
+
+(defn clear-error
+  ``
+  Clear any errors showing at the bottom of the terminal.
+  ``
+  []
+  (def current-loc (get-cursor-pos))
+  (cursor-go-to-pos [(dyn :size/rows) 2])
+  (terminal/clear-line)
+  (cursor-go-to-pos current-loc))
+
 (defn render-options
   [&keys {:starting-pos starting-pos
           :choices choices
@@ -89,7 +109,11 @@
         (cprin (string/slice tip cursor) {:color :grey})
         (+= offset 1))
       (cprin tip {:color :grey})))
-  (def choices (if (dictionary? in-choices) (keys in-choices) in-choices))
+  (def choices
+    (seq [choice :in in-choices]
+      (cond
+        (bytes? choice) choice
+        (dictionary? choice) (first (keys choice)))))
   (render-options
     :starting-pos cursor-pos
     :choices choices
@@ -149,7 +173,15 @@
   (let [results (if multi
                   (map |(choices $) current-selections)
                   [(choices current-choice)])
-        mask-results (if (dictionary? in-choices) (map in-choices results) results)
+        mask-results (seq [result :in results]
+                       (var ret "")
+                       (if (has-value? in-choices result)
+                         (set ret result)
+                         (each in-choice in-choices
+                           (when (and (dictionary? in-choice)
+                                      (= (first (keys in-choice)) result))
+                             (set ret (first (values in-choice))))))
+                       ret)
         results-string (if multi (string/join mask-results ", ")
                          (first mask-results))]
     (terminal/clear-line-forward)
@@ -237,10 +269,16 @@
   (terminal/enable-cursor)
   (var response @"")
   (def gl (getline/make-getline nil (if file filepath-autocomplete nil) nil redact))
-  (set response (gl :prompt (string (cformat " ? " {:color :grey}) (cformat (string (question :question) " ") {:effects [:bold]}))
-                    :raw-prompt (string " ? " (question :question) " ")))
-  (comment print "  [collect-text-input] response: " response)
-  (terminal/hide-cursor)
+  (forever
+    (set response (gl :prompt (string (cformat " ? " {:color :grey}) (cformat (string (question :question) " ") {:effects [:bold]}))
+                      :raw-prompt (string " ? " (question :question) " ")))
+    (comment print "  [collect-text-input] response: " response)
+    (terminal/hide-cursor)
+    (if file
+      (if (os/stat (string response))
+        (do (clear-error) (break))
+        (show-error "File not found. Please try again"))
+      (break)))
   response)
 
 (defn collect-answer [question]
@@ -324,6 +362,7 @@
    - `:password` or "password" = Open input, replaced with `*` in terminal
    - `:select` or "select" = Single choice (provide with `:choices`)
    - `:checkbox` = Multiple choice (provide with `:choices`)
+   - `:path` = The path of a file in the current directory (suggest options with `Tab`)
   
   Example: 
 
@@ -349,6 +388,7 @@
    - `:password` or "password" = Open input, replaced with `*` in terminal
    - `:select` or "select" = Single choice (provide with `:choices`)
    - `:checkbox` = Multiple choice (provide with `:choices`)
+   - `:path` = The path of a file in the current directory (suggest options with `Tab`)
   
   Example: 
   
