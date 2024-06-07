@@ -66,28 +66,28 @@
 
 (defmacro unwind-choices [n]
   ~(repeat ,n (do (terminal/clear-line)
-                  (terminal/cursor-up))))
+                (terminal/cursor-up))))
 
 (defn collect-choices [question &named multi]
   (var in-choices (question :choices))
   (var cursor-pos (get-cursor-pos))
   (var current-choice 0)
   (var current-selections @[])
-  (var tip (if multi "(Use arrow keys to move, <space> to select, <a> toggles all, <i> inverts current selection)" 
-                     "(Use arrow keys to move, <enter> to confirm)"))
+  (var tip (if multi "(Use arrow keys to move, <space> to select, <a> toggles all, <i> inverts current selection)"
+             "(Use arrow keys to move, <enter> to confirm)"))
   (var offset 0)
   (comment os/sleep 6)
   (let [tip-len (rawterm/monowidth tip)
         line-len (+ tip-len (cursor-pos 0))]
     (if (> line-len (dyn :size/cols))
       (do (cprint (string/slice tip 0 (- (dyn :size/cols) (cursor-pos 1))) {:color :grey})
-          (var cursor (- (dyn :size/cols) (cursor-pos 1)))
-          (while (>= (- tip-len cursor) (dyn :size/cols))
-            (cprint (string/slice tip cursor (+ cursor (dyn :size/cols))) {:color :grey})
-            (+= cursor (dyn :size/cols))
-            (+= offset 1))
-          (cprin (string/slice tip cursor) {:color :grey})
+        (var cursor (- (dyn :size/cols) (cursor-pos 1)))
+        (while (>= (- tip-len cursor) (dyn :size/cols))
+          (cprint (string/slice tip cursor (+ cursor (dyn :size/cols))) {:color :grey})
+          (+= cursor (dyn :size/cols))
           (+= offset 1))
+        (cprin (string/slice tip cursor) {:color :grey})
+        (+= offset 1))
       (cprin tip {:color :grey})))
   (def choices (if (dictionary? in-choices) (keys in-choices) in-choices))
   (render-options
@@ -104,15 +104,15 @@
     (let [[c] (rawterm/getch)
           max-choice (dec (length choices))
           cursor-up |(do (set current-choice (dec current-choice))
-                         (when (= current-choice -1) (set current-choice (dec (length choices)))))
+                       (when (= current-choice -1) (set current-choice (dec (length choices)))))
           cursor-down |(do (set current-choice (inc current-choice))
-                           (when (> current-choice (dec (length choices))) (set current-choice 0)))]
+                         (when (> current-choice (dec (length choices))) (set current-choice 0)))]
       (case c
         2 (set current-choice 0)
         3 (do (unwind-choices (+ (length choices) offset))
-              (cursor-go-to-pos cursor-pos)
-              (error {:message "Keyboard interrupt"
-                      :cursor [(first cursor-pos) 0]}))
+            (cursor-go-to-pos cursor-pos)
+            (error {:message "Keyboard interrupt"
+                    :cursor [(first cursor-pos) 0]}))
         4 (cursor-down)
         6 (set current-choice (dec (length choices)))
         13 (do (break))
@@ -151,7 +151,7 @@
                   [(choices current-choice)])
         mask-results (if (dictionary? in-choices) (map in-choices results) results)
         results-string (if multi (string/join mask-results ", ")
-                                 (first mask-results))]
+                         (first mask-results))]
     (terminal/clear-line-forward)
     (cprint results-string {:color :turquoise})
     (comment print "  [collect-choice] current-choice: " current-choice)
@@ -160,7 +160,7 @@
 (comment (def prefix "."))
 
 (defn filepath-autocomplete [prefix &]
-  (def rel-parts (path/parts prefix))
+  (def rel-parts (string/split "/" (string/replace-all "\\" "/" prefix)))
   (def abs-parts (path/parts (path/abspath prefix)))
   (def rel (if (= "." (first rel-parts)) "./" ""))
   (def files (if (= "." prefix)
@@ -168,27 +168,29 @@
                (->> (os/dir (apply path/join (drop -1 abs-parts)))
                     (filter |(string/has-prefix? (last abs-parts) $)))))
   (def ret (seq [file :in files]
-             (string rel 
-                     (path/join
-                       ;(drop -1 rel-parts)
-                       (if (= :directory (os/stat file :mode))
-                         (string file path/sep) file)))))
-  (if (and (= 1 (length ret)) (deep= (first ret) prefix) (= :directory (os/stat (first ret) :mode)))
-    (filepath-autocomplete (string prefix path/sep)) ret))
+             (string/join
+               [;(drop -1 rel-parts)
+                (if (= :directory (os/stat file :mode))
+                  (string file "/") file)] "/")))
+  (if (and (= 1 (length ret))
+           (deep= (first ret) prefix)
+           (= :directory (os/stat (first ret) :mode)))
+    (filepath-autocomplete (string prefix "/")) ret))
 
 (test (filepath-autocomplete ".")
-      @["./example/"
-        "./src/"
-        "./.gitignore"
-        "./LICENSE"
-        "./project.janet"
-        "./README.md"
-        "./.lsp/"
-        "./.clj-kondo/"
-        "./.git/"
-        "./scratch.janet"
-        "./media/"
-        "./test/"])
+      @["example/"
+        "src/"
+        ".gitignore"
+        "LICENSE"
+        "project.janet"
+        "README.md"
+        ".lsp/"
+        ".clj-kondo/"
+        ".git/"
+        "scratch.janet"
+        "janetlsp.log.txt"
+        "media/"
+        "test/"])
 (test (filepath-autocomplete "./")
       @["./example/"
         "./src/"
